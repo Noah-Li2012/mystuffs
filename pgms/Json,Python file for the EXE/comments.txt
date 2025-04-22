@@ -1,3 +1,0 @@
-Put the q_table.json and TTT Ultimate.py in the same folder in your device for it to work well
-Remember to install the libraries with pip
--Noah
