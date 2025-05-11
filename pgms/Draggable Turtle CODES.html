@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Draggable Turtle Code for python</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #4dd7dc, #003ed9);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    input {
+      width: 60%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #3b68ef;
+      background: #83d6e7;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 50, 0.1);
+      margin-bottom: 15px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      border-color: #7b9fff;
+      box-shadow: 0 0 10px rgba(123, 159, 255, 0.3);
+    }
+
+    #turtle-bar {
+      margin-bottom: 25px;
+    }
+
+    .block {
+      display: inline-block;
+      padding: 12px 18px;
+      margin: 8px;
+      border-radius: 12px;
+      background: #83d6e7;
+      color: #333;
+      font-family: monospace;
+      font-size: 14px;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 100, 0.05);
+      transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+      border: 1.5px solid #49548c;
+      position: relative;
+    }
+
+    .block:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 14px rgba(100, 130, 255, 0.25);
+      background-color: #54d3ea;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .tooltip {
+      visibility: hidden;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      width: max-content;
+      max-width: 200px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #333 transparent transparent transparent;
+    }
+
+    .block:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    @media (max-width: 600px) {
+      .block {
+        display: block;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>🟩Python——🐢——Turtle🟩</h1>
+<li>Drag the blocks out the screen can paste the code on your editor</li>
+<input type="text" id="search" placeholder="Search blocks...">
+<input type="text" id="turtle-bar" placeholder="Turtle name (e.g. turtle)" />
+
+<div id="blocks-container">
+  <h2>———Setup———</h2>
+  <div class="block" draggable="true" data-code="import turtle
+screen = turtle.Screen()
+screen.title(&quot;Turtle Graphics&quot;)
+screen.bgcolor(&quot;white&quot;)
+
+t = turtle.Turtle()
+t.shape(&quot;turtle&quot;)
+t.color(&quot;blue&quot;)
+t.pensize(2)
+t.speed(3)">
+    Setup
+    <span class="tooltip">Basic setup code to initialize turtle graphics. Creates a window, sets up the screen, and creates a turtle with default settings.</span>
+  </div>
+
+  <h2>———Basic Turtle Commands———</h2>
+  <div class="block" draggable="true" data-code="forward(100)
+">
+    Move Forward{forward(100)}
+    <span class="tooltip">Moves the turtle forward by the specified number of units (100 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="backward(100)
+">
+    Move Backward{backward(100)}
+    <span class="tooltip">Moves the turtle backward by the specified number of units (100 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="right(90)
+">
+    Turn Right{right(90)}
+    <span class="tooltip">Turns the turtle right by the specified angle in degrees (90 degrees in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="left(90)
+">
+    Turn Left{left(90)}
+    <span class="tooltip">Turns the turtle left by the specified angle in degrees (90 degrees in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="goto(0, 0)
+">
+    Go to (0, 0){goto(0, 0)}
+    <span class="tooltip">Moves the turtle to the specified coordinates (0,0 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="setx(100)
+">
+    Set X Position{setx(100)}
+    <span class="tooltip">Sets the turtle's x-coordinate to the specified value (100 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="sety(100)
+">
+    Set Y Position{sety(100)}
+    <span class="tooltip">Sets the turtle's y-coordinate to the specified value (100 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="setheading(90)
+">
+    Set Heading{setheading(90)}
+    <span class="tooltip">Sets the turtle's heading (direction) to the specified angle in degrees (90 degrees in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="home()
+">
+    Return Home{home()}
+    <span class="tooltip">Moves the turtle to the origin (0,0) and sets its heading to the default (0 degrees).</span>
+  </div>
+  <div class="block" draggable="true" data-code="circle(50)
+">
+    Draw Circle{circle(50)}
+    <span class="tooltip">Draws a circle with the specified radius (50 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="dot(10)
+">
+    Draw Dot{dot(10)}
+    <span class="tooltip">Draws a dot with the specified diameter (10 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="stamp()
+">
+    Stamp Turtle{stamp()}
+    <span class="tooltip">Leaves an impression of the turtle shape at the current position.</span>
+  </div>
+  <div class="block" draggable="true" data-code="undo()
+">
+    Undo Last Action{undo()}
+    <span class="tooltip">Undoes the last turtle action (movement or drawing).</span>
+  </div>
+  <div class="block" draggable="true" data-code="speed(5)
+">
+    Set Speed{speed(5)}
+    <span class="tooltip">Sets the turtle's animation speed (1-10, where 1 is slowest and 10 is fastest).</span>
+  </div>
+
+  <h2>———Pen Control———</h2>
+  <div class="block" draggable="true" data-code="penup()
+">
+    Lift Pen{penup()}
+    <span class="tooltip">Lifts the pen so the turtle can move without drawing.</span>
+  </div>
+  <div class="block" draggable="true" data-code="pendown()
+">
+    Lower Pen{pendown()}
+    <span class="tooltip">Lowers the pen so the turtle can draw while moving.</span>
+  </div>
+  <div class="block" draggable="true" data-code="pensize(3)
+">
+    Set Pen Size{pensize(3)}
+    <span class="tooltip">Sets the width of the pen (3 in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="pencolor('blue')
+">
+    Set Pen Color{pencolor('blue')}
+    <span class="tooltip">Sets the color of the pen (blue in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="fillcolor('red')
+">
+    Set Fill Color{fillcolor('red')}
+    <span class="tooltip">Sets the fill color for shapes (red in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="begin_fill()
+">
+    Start Fill{begin_fill()}
+    <span class="tooltip">Starts filling shapes with the current fill color.</span>
+  </div>
+  <div class="block" draggable="true" data-code="end_fill()
+">
+    End Fill{end_fill()}
+    <span class="tooltip">Ends filling shapes with the current fill color.</span>
+  </div>
+
+  <h2>———Appearance———</h2>
+  <div class="block" draggable="true" data-code="color('blue', 'red')
+">
+    Set Color (Pen + Fill){color('blue', 'red')}
+    <span class="tooltip">Sets both pen and fill colors (blue for pen, red for fill in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="shape('turtle')
+">
+    Change Turtle Shape{shape('turtle')}
+    <span class="tooltip">Changes the turtle's shape (turtle, arrow, circle, square, triangle, or classic).</span>
+  </div>
+  <div class="block" draggable="true" data-code="shapesize(2, 2, 2)
+">
+    Resize Turtle{shapesize(2, 2, 2)}
+    <span class="tooltip">Resizes the turtle's shape (stretch_wid, stretch_len, outline in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="tilt(30)
+">
+    Tilt Turtle{tilt(30)}
+    <span class="tooltip">Tilts the turtle by the specified angle in degrees (30 degrees in this case).</span>
+  </div>
+
+  <h2>———Turtle State———</h2>
+  <div class="block" draggable="true" data-code="position()
+">
+    Get Position{position()}
+    <span class="tooltip">Returns the turtle's current position as a Vec2D vector.</span>
+  </div>
+  <div class="block" draggable="true" data-code="heading()
+">
+    Get Heading{heading()}
+    <span class="tooltip">Returns the turtle's current heading in degrees.</span>
+  </div>
+  <div class="block" draggable="true" data-code="xcor()
+">
+    Get X{Get xcor()}
+    <span class="tooltip">Returns the turtle's current x-coordinate.</span>
+  </div>
+  <div class="block" draggable="true" data-code="ycor()
+">
+    Get Y{Get ycor()}
+    <span class="tooltip">Returns the turtle's current y-coordinate.</span>
+  </div>
+
+  <h2>———Visibility———</h2>
+  <div class="block" draggable="true" data-code="showturtle()
+">
+    Show Turtle{showturtle()}
+    <span class="tooltip">Makes the turtle visible.</span>
+  </div>
+  <div class="block" draggable="true" data-code="hideturtle()
+">
+    Hide Turtle{hideturtle()}
+    <span class="tooltip">Makes the turtle invisible.</span>
+  </div>
+
+  <h2>———Screen / Drawing———</h2>
+  <div class="block" draggable="true" data-code="bgcolor('white')
+">
+    Set Background Color{bgcolor('white')}
+    <span class="tooltip">Sets the background color of the turtle screen (white in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="clearscreen()">
+    Clear Screen{clearscreen()}
+    <span class="tooltip">Clears the screen and resets the turtle to its initial state.</span>
+  </div>
+  <div class="block" draggable="true" data-code="reset()
+">
+    Reset Turtle{reset()}
+    <span class="tooltip">Resets the turtle to its initial state without clearing the screen.</span>
+  </div>
+  <div class="block" draggable="true" data-code="title('My Drawing')
+">
+    Set Window Title{title('My Drawing')}
+    <span class="tooltip">Sets the title of the turtle graphics window.</span>
+  </div>
+  <div class="block" draggable="true" data-code="update()
+">
+    Update Screen{update()}
+    <span class="tooltip">Updates the screen with all pending turtle actions.</span>
+  </div>
+  <div class="block" draggable="true" data-code="exitonclick()
+">
+    Exit on Click{exitonclick()}
+    <span class="tooltip">Closes the turtle graphics window when clicked.</span>
+  </div>
+
+  <h2>———Events and Misc———</h2>
+  <div class="block" draggable="true" data-code="onscreenclick(my_func)
+">
+    Click Event{onscreenclick(my_func)}
+    <span class="tooltip">Binds a function to mouse clicks on the screen.</span>
+  </div>
+  <div class="block" draggable="true" data-code="onkey(my_func, 'space')
+">
+    Key Press Event{onkey(my_func, 'space')}
+    <span class="tooltip">Binds a function to a key press (space in this case).</span>
+  </div>
+  <div class="block" draggable="true" data-code="listen()
+">
+    Listen for Events{listen()}
+    <span class="tooltip">Starts listening for keyboard and mouse events.</span>
+  </div>
+  <div class="block" draggable="true" data-code="done()
+">
+    Finish Drawing{done()}
+    <span class="tooltip">Finishes the drawing and keeps the window open.</span>
+  </div>
+  <div class="block" draggable="true" data-code="write('Hello!', font=('Arial', 16, 'bold'))
+">
+    Write Text{write('Hello!', font=('Arial', 16, 'bold'))}
+    <span class="tooltip">Writes text at the turtle's current position with specified font.</span>
+  </div>
+
+  <h2>———Advanced Movement———</h2>
+  <div class="block" draggable="true" data-code="towards(100, 100)
+">Face Toward Point{towards(100, 100)}</div>
+  <div class="block" draggable="true" data-code="distance(100, 100)
+">Distance to Point{distance(100, 100)}</div>
+  <div class="block" draggable="true" data-code="setpos(50, 50)
+">Set Position{setpos(50, 50)}</div>
+  <div class="block" draggable="true" data-code="setposition(50, 50)
+">Set Position (Alias){setposition(50, 50)}</div>
+
+  <h2>———Pen State———</h2>
+  <div class="block" draggable="true" data-code="isdown()
+">Is Pen Down?{isdown()}</div>
+  <div class="block" draggable="true" data-code="pen()
+">Get Pen State{pen()}</div>
+  <div class="block" draggable="true" data-code="pensize()
+">Get Pen Size{pensize()}</div>
+
+  <h2>———Fill State———</h2>
+  <div class="block" draggable="true" data-code="filling()
+">Is Filling?{filling()}</div>
+
+  <h2>———Turtle State (More)———</h2>
+  <div class="block" draggable="true" data-code="speed()
+">Get Speed{speed()}</div>
+  <div class="block" draggable="true" data-code="heading()
+">Get Direction Angle{heading()}</div>
+
+  <h2>———Shape and Style———</h2>
+  <div class="block" draggable="true" data-code="resizemode('auto')
+">Set Resize Mode{resizemode('auto')}</div>
+  <div class="block" draggable="true" data-code="shearfactor(0.5)
+">Set Shear Factor{shearfactor(0.5)}</div>
+  <div class="block" draggable="true" data-code="tiltangle(45)
+">Set Tilt Angle{tiltangle(45)}</div>
+  <div class="block" draggable="true" data-code="tiltangle()
+">Get Tilt Angle{tiltangle()}</div>
+
+  <h2>———Stamp and Clear———</h2>
+  <div class="block" draggable="true" data-code="clear()
+">Clear Drawing{clear()}</div>
+  <div class="block" draggable="true" data-code="clearstamp(stamp_id)
+">Clear Specific Stamp{clearstamp(stamp_id)}</div>
+  <div class="block" draggable="true" data-code="clearstamps()
+">Clear All Stamps{clearstamps()}</div>
+  <div class="block" draggable="true" data-code="clearstamps(1)
+">Clear Most Recent Stamp{clearstamps(1)}</div>
+
+  <h2>———Multiple Turtles———</h2>
+  <div class="block" draggable="true" data-code="clone()
+">Clone Turtle{clone()}</div>
+  <div class="block" draggable="true" data-code="t = Turtle()
+">Create New Turtle{t = Turtle()}</div>
+
+  <h2>———Tracer and Animation———</h2>
+  <div class="block" draggable="true" data-code="tracer(0)
+">Disable Animation{tracer(0)}</div>
+  <div class="block" draggable="true" data-code="update()
+">Update Drawing{update()}</div>
+  <div class="block" draggable="true" data-code="delay(10)
+">Set Drawing Delay{delay(10)}</div>
+
+  <h2>———Screen Settings———</h2>
+  <div class="block" draggable="true" data-code="screensize(800, 600)
+">Set Screen Size{screensize(800, 600)}</div>
+  <div class="block" draggable="true" data-code="setup(800, 600)
+">Set Window Size{setup(800, 600)}</div>
+  <div class="block" draggable="true" data-code="window_width()
+">Get Window Width{window_width()}</div>
+  <div class="block" draggable="true" data-code="window_height()
+">Get Window Height{window_height()}</div>
+  <div class="block" draggable="true" data-code="bgpic('image.gif')
+">Set Background Image{bgpic('image.gif')}</div>
+  <div class="block" draggable="true" data-code="addshape('custom.gif')
+">Add Custom Shape{addshape('custom.gif')}</div>
+
+  <h2>———Events and Bindings———</h2>
+  <div class="block" draggable="true" data-code="onkeypress(func, 'a')
+">Bind Key 'a'{onkeypress(func, 'a')}</div>
+  <div class="block" draggable="true" data-code="onrelease(func)
+">Bind Mouse Release{onrelease(func)}</div>
+</div>
+<h2>About</h2>
+<li>🟥This is for exams cheating</li>
+<li>🟥Subscribe to @noahliNotFound on YouTube</li>
+  <script>
+
+const loadingContainer = document.createElement('div');
+loadingContainer.style.position = 'fixed';
+loadingContainer.style.top = '0';
+loadingContainer.style.left = '0';
+loadingContainer.style.width = '100%';
+loadingContainer.style.height = '100%';
+loadingContainer.style.backgroundColor = 'black';
+loadingContainer.style.display = 'flex';
+loadingContainer.style.flexDirection = 'column';
+loadingContainer.style.alignItems = 'center';
+loadingContainer.style.justifyContent = 'center';
+loadingContainer.style.color = 'white';
+
+const loadingText = document.createElement('div');
+loadingText.textContent = 'Loading... 0%';
+loadingText.style.fontSize = '24px';
+
+const progressBar = document.createElement('div');
+progressBar.style.width = '80%';
+progressBar.style.height = '20px';
+progressBar.style.background = '#333';
+progressBar.style.borderRadius = '5px';
+progressBar.style.overflow = 'hidden';
+
+const progress = document.createElement('div');
+progress.style.height = '100%';
+progress.style.width = '0%';
+progress.style.backgroundColor = '#4caf50';
+
+progressBar.appendChild(progress);
+loadingContainer.appendChild(loadingText);
+loadingContainer.appendChild(progressBar);
+document.body.appendChild(loadingContainer);
+
+let progressValue = 0;
+function updateProgress() {
+    progressValue += Math.random() * 7;
+    if (progressValue > 100) progressValue = 100;
+
+    progress.style.width = Math.min(progressValue, 100) + '%';
+    loadingText.textContent = 'Loading...   ' + Math.min(Math.floor(progressValue), 100) + '%';
+
+    if (progressValue >= 100) {
+        setTimeout(() => {
+            loadingContainer.remove();
+            const whiteFlash = document.createElement('div');
+            whiteFlash.style.position = 'fixed';
+            whiteFlash.style.top = '0';
+            whiteFlash.style.left = '0';
+            whiteFlash.style.width = '100%';
+            whiteFlash.style.height = '100%';
+            whiteFlash.style.backgroundColor = 'white';
+            document.body.appendChild(whiteFlash);
+
+            setTimeout(() => {
+                whiteFlash.remove();
+            }, 200);
+        }, Math.random() * 500);
+    } else {
+        setTimeout(updateProgress, Math.random() * 100);
+    }
+}
+
+updateProgress();
+
+    const searchInput = document.getElementById("search");
+    const turtleBar = document.getElementById("turtle-bar");
+    const blocks = document.querySelectorAll(".block");
+    const blocksContainer = document.getElementById("blocks-container");
+
+    const noTurtleNameCommands = [
+      "bgcolor(", "clearscreen()", "reset()", "title(", "update()", "exitonclick()",
+      "screensize(", "setup(", "window_width()", "window_height()", "bgpic(", "addshape(",
+      "listen()", "onscreenclick(", "onkey(", "onkeypress(", "onrelease(", "mainloop()",
+      "tracer(", "delay()", "colormode(", "mode("
+    ];
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.toLowerCase();
+      blocks.forEach(block => {
+        const text = block.textContent.toLowerCase();
+        block.classList.toggle("hidden", !text.includes(query));
+      });
+    });
+
+    blocks.forEach(block => {
+      block.addEventListener("dragstart", (event) => {
+        const turtleName = turtleBar.value.trim();
+        let baseCode = block.getAttribute("data-code");
+        let finalCode = baseCode;
+
+        if (turtleName && !noTurtleNameCommands.some(cmd => baseCode.startsWith(cmd))) {
+          finalCode = `${turtleName}.${baseCode}`;
+        }
+
+        event.dataTransfer.setData("text/plain", finalCode);
+        console.log("Dragging:", finalCode);
+      });
+
+      block.addEventListener("dragend", (event) => {
+        event.preventDefault();
+      });
+    });
+
+    blocksContainer.addEventListener("dragover", (event) => {
+      event.preventDefault();
+    });
+
+    blocksContainer.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const data = event.dataTransfer.getData("text/plain");
+      console.log("Dropped:", data);
+    });
+  </script>
+
+</body>
+</html>
