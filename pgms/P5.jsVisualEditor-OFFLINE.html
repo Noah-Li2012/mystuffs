@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>p5.js Visual Editor - Advanced Select & Transform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    display: flex;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e1e2f 0%, #2a2a42 100%);
+    color: #ddd;
+    overflow: hidden;
+  }
+
+  canvas {
+    border: 2px solid #333;
+    cursor: crosshair;
+    background: linear-gradient(135deg, #222233 0%, #181828 100%);
+    box-shadow: 0 0 30px #00ffff44, inset 0 0 50px #00ffff11;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+  }
+
+  canvas:hover {
+    box-shadow: 0 0 40px #00ffff66, inset 0 0 60px #00ffff22;
+  }
+
+  #tools {
+    width: 360px;
+    background: linear-gradient(135deg, #2a2a42 0%, #1e1e2f 100%);
+    padding: 20px;
+    box-shadow: inset 0 0 30px #00ffff22, 2px 0 20px #00000044;
+    overflow-y: auto;
+    max-height: 100vh;
+  }
+
+  select, input[type=color], input[type=number], input[type=range], button {
+    width: 100%;
+    margin: 8px 0;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid #00ffff33;
+    font-size: 15px;
+    outline: none;
+    background: linear-gradient(135deg, #444466 0%, #333355 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 15px #00ffff22, inset 0 1px 0 #ffffff11;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+  }
+
+  select {
+    color: #ffffff;
+    background: linear-gradient(135deg, #555577 0%, #444466 100%);
+  }
+
+  select option {
+    background: #444466;
+    color: #ffffff;
+    padding: 8px;
+  }
+
+  select:hover, input[type=color]:hover, input[type=number]:hover, input[type=range]:hover, button:hover {
+    background: linear-gradient(135deg, #55ffff22 0%, #44dddd33 100%);
+    box-shadow: 0 6px 25px #00ffff44, inset 0 1px 0 #ffffff22;
+    border-color: #00ffff66;
+    color: #ffffff;
+    cursor: pointer;
+    transform: translateY(-2px);
+  }
+
+  button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px #00ffff66, inset 0 0 20px #00ffff33;
+  }
+
+  input[type=color] {
+    height: 50px;
+    padding: 4px;
+    cursor: pointer;
+  }
+
+  .color-preview {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    margin-left: 10px;
+    border: 2px solid #00ffff44;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #00000044;
+  }
+
+  .control-group {
+    margin: 20px 0;
+    padding: 18px 20px;
+    border: 2px solid #00ffff44;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #222238dd 0%, #1a1a2add 100%);
+    box-shadow: 0 8px 32px #00ffff22, inset 0 1px 0 #ffffff11;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .control-group:hover {
+    border-color: #00ffff66;
+    box-shadow: 0 12px 40px #00ffff33, inset 0 1px 0 #ffffff22;
+    transform: translateY(-3px);
+  }
+
+  .control-group label {
+    margin-bottom: 10px;
+    display: block;
+    font-weight: 600;
+    color: #00ffffdd;
+    text-shadow: 0 0 10px #00ffff44;
+  }
+
+  pre {
+    background: linear-gradient(135deg, #000011 0%, #001122 100%);
+    color: #00ff99;
+    padding: 20px;
+    overflow: auto;
+    height: 350px;
+    border-radius: 16px;
+    font-size: 13px;
+    user-select: all;
+    box-shadow: 0 8px 32px #00ffcc33, inset 0 0 30px #00ffcc22;
+    border: 2px solid #00ffcc44;
+    font-family: 'Courier New', monospace;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+  }
+
+  pre:hover {
+    box-shadow: 0 12px 40px #00ffcc44, inset 0 0 40px #00ffcc33;
+  }
+
+  #transformControls {
+    display: none;
+  }
+
+  .selection-box {
+    position: absolute;
+    border: 3px solid #00ffffff;
+    box-shadow: 0 0 30px #00ffffcc, 0 0 60px #00ffff99 inset, 0 0 100px #00ffff44;
+    pointer-events: none;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(2px);
+  }
+
+  .control-handle {
+    position: absolute;
+    background: linear-gradient(135deg, #00ffffff 0%, #00ffffcc 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 20px #00ffffcc, 0 0 40px #00ffff88;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid #ffffff44;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-weight: bold;
+    font-size: 12px;
+    pointer-events: auto;
+  }
+
+  .control-handle:hover {
+    background: linear-gradient(135deg, #ffffff 0%, #00ffff 100%);
+    transform: scale(1.3);
+    box-shadow: 0 0 30px #00ffffff, 0 0 60px #00ffffaa;
+  }
+
+  .resize-handle {
+    width: 16px;
+    height: 16px;
+  }
+
+  .handle-top-left { top: -12px; left: -12px; cursor: nwse-resize; }
+  .handle-top-right { top: -12px; right: -12px; cursor: nesw-resize; }
+  .handle-bottom-left { bottom: -12px; left: -12px; cursor: nesw-resize; }
+  .handle-bottom-right { bottom: -12px; right: -12px; cursor: nwse-resize; }
+
+  .rotation-handle {
+    width: 20px;
+    height: 20px;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: grab;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+    border-radius: 4px;
+  }
+
+  .rotation-handle:hover {
+    background: linear-gradient(135deg, #ff8a80 0%, #ff7043 100%);
+  }
+
+  .rotation-handle:active {
+    cursor: grabbing;
+  }
+
+  .size-handle {
+    width: 20px;
+    height: 20px;
+  }
+
+  .size-increase {
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  }
+
+  .size-decrease {
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  }
+
+  .move-handle {
+    width: 32px;
+    height: 32px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    cursor: move;
+    border-radius: 8px;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-small {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin: 4px 0;
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    color: white;
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #44ff44 0%, #00cc00 100%);
+    color: #000;
+  }
+
+  .btn-info {
+    background: linear-gradient(135deg, #44ddff 0%, #0099cc 100%);
+    color: #000;
+  }
+
+  .advanced-panel {
+    background: linear-gradient(135deg, #1a1a2a 0%, #2a2a3a 100%);
+    border: 2px solid #00ffff33;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px #00ffff44; }
+    50% { box-shadow: 0 0 40px #00ffff88; }
+  }
+
+  .pulse { animation: pulse 2s infinite; }
+  .glow { animation: glow 2s infinite; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    height: 8px;
+    background: linear-gradient(90deg, #00ffff33, #00ffff66);
+    border-radius: 4px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #00ffff, #ffffff);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px #00ffffaa;
+  }
+
+  .loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2a 0%, #2a2a3a 50%, #1e1e2f 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: #fff;
+    text-align: center;
+    transition: opacity 0.5s ease-out;
+  }
+
+  .loading-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loading-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #00ffff;
+    text-shadow: 0 0 30px #00ffff88;
+    margin-bottom: 20px;
+    animation: glow-pulse 2s infinite alternate;
+  }
+
+  .loading-subtitle {
+    font-size: 24px;
+    color: #44ff44;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-shadow: 0 0 20px #44ff4488;
+  }
+
+  .loading-author {
+    font-size: 16px;
+    color: #aaa;
+    margin-bottom: 40px;
+    font-style: italic;
+  }
+
+  .loading-status {
+    font-size: 18px;
+    color: #00ffffcc;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .loading-dots {
+    display: inline-block;
+  }
+
+  .loading-dots::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+  }
+
+  @keyframes glow-pulse {
+    0% { text-shadow: 0 0 30px #00ffff88; }
+    100% { text-shadow: 0 0 50px #00ffffcc, 0 0 80px #00ffff66; }
+  }
+
+  @keyframes loading-dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #00ffff33;
+    border-top: 3px solid #00ffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Status indicator */
+  .status-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #00ffff22, #00ffff44);
+    border: 1px solid #00ffff66;
+    border-radius: 20px;
+    color: #00ffff;
+    font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 0 10px #00ffff44;
+  }
+
+  .editor-info {
+    margin-top: 20px;
+    padding: 15px;
+    border-top: 2px solid #00ffff33;
+    text-align: center;
+  }
+
+  .editor-description {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00ffffdd;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px #00ffff44;
+  }
+
+  .copyright {
+    font-size: 11px;
+    color: #888;
+    margin: 0;
+    font-style: italic;
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+<div id="loadingScreen" class="loading-screen">
+    <div class="loading-title">Visual Editor for p5.js</div>
+    <div class="loading-subtitle">Free forever.</div>
+    <div class="loading-author">By NoahLi404, No connection with p5.js</div>
+    <div class="loading-status">
+      <div class="loading-spinner"></div>
+      <span>Loading<span class="loading-dots"></span></span>
+    </div>
+  </div>
+
+  <div id="tools">
+    <select id="tool">
+      <option value="rect">Rectangle</option>
+      <option value="ellipse">Ellipse</option>
+      <option value="triangle">Triangle</option>
+      <option value="select">Select</option>
+    </select>
+
+    <div class="control-group">
+      <label>Fill Color: <span class="color-preview" id="fillPreview"></span></label>
+      <input type="color" id="fillColor" value="#ff0000" />
+      <label>Opacity:</label>
+      <input type="range" id="fillOpacity" min="0" max="255" value="255" />
+    </div>
+
+    <div class="control-group">
+      <label>Stroke Color: <span class="color-preview" id="strokePreview"></span></label>
+      <input type="color" id="strokeColor" value="#000000" />
+      <label>Stroke Weight:</label>
+      <input type="range" id="strokeWeight" min="0" max="20" value="1" />
+    </div>
+
+    <div class="control-group" id="transformControls">
+      <label>Transform Selected Shape</label>
+      <div class="btn-group">
+        <button class="btn-small btn-success" id="increaseSizeBtn">+ Size</button>
+        <button class="btn-small btn-danger" id="decreaseSizeBtn">- Size</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn-small btn-info" id="rotateLeftBtn">Rotate -1</button>
+        <button class="btn-small btn-info" id="rotateRightBtn">Rotate +1</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn-small btn-info" id="flipHorizontalBtn">Flip H</button>
+        <button class="btn-small btn-info" id="flipVerticalBtn">Flip V</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn-small" id="copyShapeBtn">Copy</button>
+        <button class="btn-small" id="duplicateBtn">Duplicate</button>
+      </div>
+      <button class="btn-danger" id="deleteBtn">Delete Selected</button>
+    </div>
+
+    <div class="advanced-panel">
+      <label>Advanced Features</label>
+      <div class="btn-group">
+        <button class="btn-small" id="undoBtn">Undo</button>
+        <button class="btn-small" id="redoBtn">Redo</button>
+      </div>
+      <label>Grid Snap:</label>
+      <input type="checkbox" id="snapToGrid" />
+      <label>Grid Size:</label>
+      <input type="range" id="gridSize" min="5" max="50" value="20" />
+    </div>
+
+    <button onclick="clearCanvas()">Clear All</button>
+    <button onclick="copyCode()" class="btn-success">Copy p5.js Code</button>
+    <button onclick="exportImage()" class="btn-info">Export Image</button>
+
+    <h3>Generated p5.js Code</h3>
+    <pre id="codeBox"></pre>
+
+    <div class="editor-info">
+      <p class="editor-description">This is a WYSIWYG p5.js Editor</p>
+      <p class="copyright">&copy; Noah Li 2025. All rights reserved.</p>
+    </div>
+  </div>
+
+  <div class="status-indicator" id="statusIndicator">Ready</div>
+
+<div id="selectionBox" class="selection-box" style="display:none;">
+  <div class="control-handle resize-handle handle-top-left"></div>
+    <div class="control-handle resize-handle handle-top-right"></div>
+    <div class="control-handle resize-handle handle-bottom-left"></div>
+    <div class="control-handle resize-handle handle-bottom-right"></div>
+
+  <div class="control-handle rotation-handle" title="Drag to rotate">⟲</div>
+
+  <div class="control-handle size-handle size-increase" title="Increase size">+</div>
+    <div class="control-handle size-handle size-decrease" title="Decrease size">-</div>
+
+  <div class="control-handle move-handle" title="Drag to move">⬌</div>
+  </div>
+
+<script>
+  let shapes = [];
+  let shapeHistory = [];
+  let historyIndex = -1;
+  let currentTool = 'rect';
+  let fillColor, strokeColor, strokeWeightVal, fillOpacity;
+  let startX, startY;
+  let selectedShapeIndices = [];
+  let draggingShape = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let rotating = false;
+  let rotationStartX = 0;
+  let rotationStartY = 0;
+  let rotationStartAngle = 0;
+  let resizing = false;
+  let resizeHandle = null;
+  let resizeStartX = 0;
+  let resizeStartY = 0;
+  let resizeStartW = 0;
+  let resizeStartH = 0;
+  let snapToGrid = false;
+  let gridSize = 20;
+  let isDrawing = false;
+  let previewShape = null;
+
+  const selectionBox = document.getElementById('selectionBox');
+  const transformControls = document.getElementById('transformControls');
+  const statusIndicator = document.getElementById('statusIndicator');
+
+  function setup() {
+    let canvas = createCanvas(window.innerWidth - 380, window.innerHeight);
+    canvas.parent(document.body);
+
+    fillColor = document.getElementById('fillColor');
+    strokeColor = document.getElementById('strokeColor');
+    strokeWeightVal = document.getElementById('strokeWeight');
+    fillOpacity = document.getElementById('fillOpacity');
+
+    updateColorPreviews();
+
+    setupEventListeners();
+
+    saveToHistory();
+    updateStatus('Ready - Select a tool to start');
+
+    setTimeout(() => {
+      const loadingScreen = document.getElementById('loadingScreen');
+      loadingScreen.classList.add('fade-out');
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }, 2000);
+  }
+
+  function setupEventListeners() {
+    document.getElementById('tool').addEventListener('change', e => {
+      currentTool = e.target.value;
+      selectedShapeIndices = [];
+      updateTransformUI();
+      selectionBox.style.display = 'none';
+      cursor(currentTool === 'select' ? 'default' : 'crosshair');
+      updateStatus(`${currentTool} tool selected`);
+    });
+
+    fillColor.addEventListener('change', updateColorPreviews);
+    strokeColor.addEventListener('change', updateColorPreviews);
+
+    document.getElementById('increaseSizeBtn').onclick = () => changeSize(10);
+    document.getElementById('decreaseSizeBtn').onclick = () => changeSize(-10);
+    document.getElementById('rotateLeftBtn').onclick = () => rotateShape(-1);
+    document.getElementById('rotateRightBtn').onclick = () => rotateShape(1);
+    document.getElementById('flipHorizontalBtn').onclick = flipHorizontal;
+    document.getElementById('flipVerticalBtn').onclick = flipVertical;
+    document.getElementById('deleteBtn').onclick = deleteSelected;
+    document.getElementById('copyShapeBtn').onclick = copyShape;
+    document.getElementById('duplicateBtn').onclick = duplicateShape;
+
+    document.getElementById('undoBtn').onclick = undo;
+    document.getElementById('redoBtn').onclick = redo;
+
+    document.getElementById('snapToGrid').addEventListener('change', e => {
+      snapToGrid = e.target.checked;
+      updateStatus(snapToGrid ? 'Grid snap enabled' : 'Grid snap disabled');
+    });
+
+    document.getElementById('gridSize').addEventListener('input', e => {
+      gridSize = parseInt(e.target.value);
+    });
+
+    setupSelectionHandles();
+
+    setupCanvasEventListeners();
+  }
+
+  function setupCanvasEventListeners() {
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault(); // Prevent context menu
+    });
+
+    document.addEventListener('mousedown', e => {
+      if (e.target.tagName === 'CANVAS') {
+        mousePressed(e);
+      }
+    });
+  }
+
+  function setupSelectionHandles() {
+    const rotationHandle = selectionBox.querySelector('.rotation-handle');
+    let isRotating = false;
+    let rotationStartMouseX = 0;
+    let rotationStartMouseY = 0;
+
+    rotationHandle.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (selectedShapeIndices.length === 0) return;
+
+      isRotating = true;
+      rotationStartMouseX = e.clientX;
+      rotationStartMouseY = e.clientY;
+      rotationStartAngle = shapes[selectedShapeIndices[0]].rotation || 0;
+
+      const handleMouseMove = (moveEvent) => {
+        if (!isRotating) return;
+
+        let dx = moveEvent.clientX - rotationStartMouseX;
+        let dy = moveEvent.clientY - rotationStartMouseY;
+        let angle = Math.atan2(dy, dx);
+
+        selectedShapeIndices.forEach(index => {
+          shapes[index].rotation = rotationStartAngle + angle;
+        });
+
+        updateSelectionBox();
+        updateCodeBox();
+      };
+
+      const handleMouseUp = () => {
+        isRotating = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        saveToHistory();
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    });
+
+    selectionBox.querySelector('.size-increase').addEventListener('mousedown', e => {
+      e.stopPropagation();
+      changeSize(10);
+    });
+    selectionBox.querySelector('.size-decrease').addEventListener('mousedown', e => {
+      e.stopPropagation();
+      changeSize(-10);
+    });
+
+    const moveHandle = selectionBox.querySelector('.move-handle');
+    moveHandle.addEventListener('mousedown', startMove);
+
+    const resizeHandles = selectionBox.querySelectorAll('.resize-handle');
+    resizeHandles.forEach(handle => {
+      handle.addEventListener('mousedown', e => startResize(e, handle));
+    });
+  }
+
+  function updateColorPreviews() {
+    document.getElementById('fillPreview').style.backgroundColor = fillColor.value;
+    document.getElementById('strokePreview').style.backgroundColor = strokeColor.value;
+  }
+
+  function updateStatus(message) {
+    statusIndicator.textContent = message;
+    statusIndicator.classList.add('pulse');
+    setTimeout(() => statusIndicator.classList.remove('pulse'), 1000);
+  }
+
+  function mousePressed(event) {
+    if (mouseX < 0 || mouseY < 0 || mouseX > width || mouseY > height) return;
+
+    if (event && event.button === 2) {
+      handleRightClickSelection();
+      return;
+    }
+
+    if (currentTool === 'select' && selectedShapeIndices.length > 0) {
+      if (checkHandleClick(mouseX, mouseY)) {
+        return;
+      }
+    }
+
+    if (currentTool === 'select') {
+      handleSelection();
+    } else {
+      startDrawing();
+    }
+  }
+
+  function handleRightClickSelection() {
+    let clickedShapeIndex = -1;
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      if (isPointInShape(mouseX, mouseY, shapes[i])) {
+        clickedShapeIndex = i;
+        break;
+      }
+    }
+
+    if (clickedShapeIndex !== -1) {
+      selectedShapeIndices = [clickedShapeIndex];
+      updateTransformUI();
+      updateSelectionBox();
+      updateStatus(`Right-clicked: Selected shape ${clickedShapeIndex + 1}`);
+    } else {
+      selectedShapeIndices = [];
+      updateTransformUI();
+      selectionBox.style.display = 'none';
+      updateStatus('Right-clicked: No shapes selected');
+    }
+  }
+
+  function checkHandleClick(px, py) {
+    const canvasRect = document.querySelector('canvas').getBoundingClientRect();
+    const screenX = canvasRect.left + px;
+    const screenY = canvasRect.top + py;
+
+    const handles = selectionBox.querySelectorAll('.control-handle');
+    for (let handle of handles) {
+      const rect = handle.getBoundingClientRect();
+      if (screenX >= rect.left && screenX <= rect.right &&
+          screenY >= rect.top && screenY <= rect.bottom) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function handleSelection() {
+    let clickedShapeIndex = -1;
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      if (isPointInShape(mouseX, mouseY, shapes[i])) {
+        clickedShapeIndex = i;
+        break;
+      }
+    }
+
+    if (clickedShapeIndex !== -1) {
+      selectedShapeIndices = [clickedShapeIndex];
+      setupDragging();
+      updateTransformUI();
+      updateSelectionBox();
+      updateStatus(`Selected shape ${clickedShapeIndex + 1}`);
+    } else {
+      selectedShapeIndices = [];
+      draggingShape = false;
+      updateTransformUI();
+      selectionBox.style.display = 'none';
+      updateStatus('No shapes selected');
+    }
+  }
+
+
+
+
+
+  function getBounds(shape) {
+    let w = Math.abs(shape.w);
+    let h = Math.abs(shape.h);
+    let centerX = shape.x + w / 2;
+    let centerY = shape.y + h / 2;
+
+    if (shape.rotation && shape.rotation !== 0) {
+      let cos = Math.abs(Math.cos(shape.rotation));
+      let sin = Math.abs(Math.sin(shape.rotation));
+      let rotatedW = w * cos + h * sin;
+      let rotatedH = w * sin + h * cos;
+
+      return {
+        left: centerX - rotatedW / 2,
+        right: centerX + rotatedW / 2,
+        top: centerY - rotatedH / 2,
+        bottom: centerY + rotatedH / 2
+      };
+    }
+
+    return {
+      left: shape.x,
+      right: shape.x + w,
+      top: shape.y,
+      bottom: shape.y + h
+    };
+  }
+
+  function setupDragging() {
+    if (selectedShapeIndices.length > 0) {
+      let firstShape = shapes[selectedShapeIndices[0]];
+      dragOffsetX = mouseX - firstShape.x;
+      dragOffsetY = mouseY - firstShape.y;
+      draggingShape = true;
+      rotating = false;
+    }
+  }
+
+  function startDrawing() {
+    startX = snapToGrid ? Math.round(mouseX / gridSize) * gridSize : mouseX;
+    startY = snapToGrid ? Math.round(mouseY / gridSize) * gridSize : mouseY;
+    isDrawing = true;
+    draggingShape = false;
+  }
+
+  function rotateShape(degrees) {
+    if (selectedShapeIndices.length === 0) return;
+
+    let radians = degrees * Math.PI / 180;
+
+    selectedShapeIndices.forEach(index => {
+      let currentRotation = shapes[index].rotation || 0;
+      shapes[index].rotation = currentRotation + radians;
+    });
+
+    updateSelectionBox();
+    updateCodeBox();
+    saveToHistory();
+    updateStatus(`Rotated ${degrees} degree(s)`);
+  }
+
+  function startMove(e) {
+    e.stopPropagation();
+    if (selectedShapeIndices.length === 0) return;
+
+    draggingShape = true;
+    let firstShape = shapes[selectedShapeIndices[0]];
+    const canvasRect = document.querySelector('canvas').getBoundingClientRect();
+    const canvasX = e.clientX - canvasRect.left;
+    const canvasY = e.clientY - canvasRect.top;
+    dragOffsetX = canvasX - firstShape.x;
+    dragOffsetY = canvasY - firstShape.y;
+    updateStatus('Moving shape(s)');
+  }
+
+  function startResize(e, handle) {
+    e.stopPropagation();
+    if (selectedShapeIndices.length === 0) return;
+
+    resizing = true;
+    resizeHandle = handle.classList.contains('handle-top-left') ? 'tl' :
+                  handle.classList.contains('handle-top-right') ? 'tr' :
+                  handle.classList.contains('handle-bottom-left') ? 'bl' : 'br';
+
+    resizeStartX = e.clientX;
+    resizeStartY = e.clientY;
+
+    let bounds = getSelectionBounds();
+    resizeStartW = bounds.width;
+    resizeStartH = bounds.height;
+
+    updateStatus('Resizing shape(s)');
+  }
+
+  function mouseDragged() {
+    if (resizing && selectedShapeIndices.length > 0) {
+      handleResize();
+    } else if (draggingShape && selectedShapeIndices.length > 0 && currentTool === 'select') {
+      handleDragging();
+    } else if (isDrawing && currentTool !== 'select') {
+      updatePreview();
+    }
+  }
+
+  function handleResize() {
+    let dx = mouseX - (resizeStartX - document.querySelector('canvas').getBoundingClientRect().left);
+    let dy = mouseY - (resizeStartY - document.querySelector('canvas').getBoundingClientRect().top);
+
+    let scaleFactor = 1;
+    if (resizeHandle === 'br') {
+      scaleFactor = Math.max(0.1, 1 + (dx + dy) / 200);
+    } else if (resizeHandle === 'tl') {
+      scaleFactor = Math.max(0.1, 1 - (dx + dy) / 200);
+    } else if (resizeHandle === 'tr') {
+      scaleFactor = Math.max(0.1, 1 + (dx - dy) / 200);
+    } else if (resizeHandle === 'bl') {
+      scaleFactor = Math.max(0.1, 1 + (-dx + dy) / 200);
+    }
+
+    selectedShapeIndices.forEach(index => {
+      let s = shapes[index];
+      let newW = Math.abs(s.w) * scaleFactor;
+      let newH = Math.abs(s.h) * scaleFactor;
+
+      if (newW >= 10 && newH >= 10) {
+        s.w = s.w < 0 ? -newW : newW;
+        s.h = s.h < 0 ? -newH : newH;
+      }
+    });
+
+    updateSelectionBox();
+    updateCodeBox();
+  }
+
+  function handleDragging() {
+    let newX = snapToGrid ?
+      Math.round((mouseX - dragOffsetX) / gridSize) * gridSize :
+      mouseX - dragOffsetX;
+    let newY = snapToGrid ?
+      Math.round((mouseY - dragOffsetY) / gridSize) * gridSize :
+      mouseY - dragOffsetY;
+
+    let firstShape = shapes[selectedShapeIndices[0]];
+    let deltaX = newX - firstShape.x;
+    let deltaY = newY - firstShape.y;
+
+    selectedShapeIndices.forEach(index => {
+      shapes[index].x += deltaX;
+      shapes[index].y += deltaY;
+    });
+
+    updateSelectionBox();
+    updateCodeBox();
+  }
+
+  function updatePreview() {
+    if (!isDrawing) return;
+
+    let endX = snapToGrid ? Math.round(mouseX / gridSize) * gridSize : mouseX;
+    let endY = snapToGrid ? Math.round(mouseY / gridSize) * gridSize : mouseY;
+
+    previewShape = {
+      tool: currentTool,
+      x: Math.min(startX, endX),
+      y: Math.min(startY, endY),
+      w: Math.abs(endX - startX),
+      h: Math.abs(endY - startY),
+      fill: fillColor.value,
+      fillOpacity: parseInt(fillOpacity.value),
+      stroke: strokeColor.value,
+      strokeWeight: parseInt(strokeWeightVal.value),
+      rotation: 0,
+      flipH: false,
+      flipV: false
+    };
+  }
+
+  function mouseReleased() {
+    if (draggingShape || resizing) {
+      draggingShape = false;
+      resizing = false;
+      saveToHistory();
+      updateStatus('Transform completed');
+    } else if (isDrawing && currentTool !== 'select') {
+      createNewShape();
+      isDrawing = false;
+      previewShape = null;
+    }
+  }
+
+  function createNewShape() {
+    if (mouseX > 0 && mouseY > 0 && previewShape && previewShape.w > 5 && previewShape.h > 5) {
+      shapes.push(previewShape);
+      saveToHistory();
+      updateCodeBox();
+      updateStatus(`${currentTool} created`);
+    }
+  }
+
+  function isPointInShape(px, py, shape) {
+    let cx = shape.x + Math.abs(shape.w) / 2;
+    let cy = shape.y + Math.abs(shape.h) / 2;
+    let angle = shape.rotation || 0;
+    let cosA = cos(-angle);
+    let sinA = sin(-angle);
+    let dx = px - cx;
+    let dy = py - cy;
+    let xRot = dx * cosA - dy * sinA + Math.abs(shape.w) / 2;
+    let yRot = dx * sinA + dy * cosA + Math.abs(shape.h) / 2;
+
+    switch (shape.tool) {
+      case 'rect':
+        return xRot >= 0 && xRot <= Math.abs(shape.w) && yRot >= 0 && yRot <= Math.abs(shape.h);
+      case 'ellipse':
+        let rx = Math.abs(shape.w) / 2;
+        let ry = Math.abs(shape.h) / 2;
+        let dx2 = (xRot - Math.abs(shape.w)/2) / rx;
+        let dy2 = (yRot - Math.abs(shape.h)/2) / ry;
+        return (dx2 * dx2 + dy2 * dy2) <= 1;
+      case 'triangle':
+        return xRot >= 0 && xRot <= Math.abs(shape.w) && yRot >= 0 && yRot <= Math.abs(shape.h);
+      default:
+        return false;
+    }
+  }
+
+  function updateSelectionBox() {
+    if (selectedShapeIndices.length === 0) {
+      selectionBox.style.display = 'none';
+      return;
+    }
+
+    let bounds = getSelectionBounds();
+    selectionBox.style.display = 'block';
+
+    const canvasRect = document.querySelector('canvas').getBoundingClientRect();
+    const left = canvasRect.left + bounds.left;
+    const top = canvasRect.top + bounds.top;
+    const w = bounds.width;
+    const h = bounds.height;
+
+    selectionBox.style.width = w + 'px';
+    selectionBox.style.height = h + 'px';
+    selectionBox.style.left = left + 'px';
+    selectionBox.style.top = top + 'px';
+
+    selectionBox.style.transform = 'none';
+    selectionBox.style.transformOrigin = 'center center';
+  }
+
+  function getSelectionBounds() {
+    if (selectedShapeIndices.length === 0) return { left: 0, top: 0, width: 0, height: 0 };
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    selectedShapeIndices.forEach(index => {
+      let s = shapes[index];
+      let bounds = getBounds(s);
+      minX = Math.min(minX, bounds.left);
+      minY = Math.min(minY, bounds.top);
+      maxX = Math.max(maxX, bounds.right);
+      maxY = Math.max(maxY, bounds.bottom);
+    });
+
+    return {
+      left: minX,
+      top: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  }
+
+  function changeSize(delta) {
+    if (selectedShapeIndices.length === 0) return;
+
+    selectedShapeIndices.forEach(index => {
+      let s = shapes[index];
+      let newW = Math.abs(s.w) + delta;
+      let newH = Math.abs(s.h) + delta;
+      if (newW >= 10 && newH >= 10) {
+        s.w = s.w < 0 ? -newW : newW;
+        s.h = s.h < 0 ? -newH : newH;
+      }
+    });
+
+    updateSelectionBox();
+    updateCodeBox();
+    saveToHistory();
+  }
+
+  function flipHorizontal() {
+    if (selectedShapeIndices.length === 0) {
+      updateStatus('No shapes selected for flip');
+      return;
+    }
+
+    selectedShapeIndices.forEach(index => {
+      let s = shapes[index];
+      s.flipH = !s.flipH;
+    });
+
+    updateSelectionBox();
+    updateCodeBox();
+    saveToHistory();
+    updateStatus(`Flipped ${selectedShapeIndices.length} shape(s) horizontally`);
+  }
+
+  function flipVertical() {
+    if (selectedShapeIndices.length === 0) {
+      updateStatus('No shapes selected for flip');
+      return;
+    }
+
+    selectedShapeIndices.forEach(index => {
+      let s = shapes[index];
+      s.flipV = !s.flipV;
+    });
+
+    updateSelectionBox();
+    updateCodeBox();
+    saveToHistory();
+    updateStatus(`Flipped ${selectedShapeIndices.length} shape(s) vertically`);
+  }
+
+  function copyShape() {
+    if (selectedShapeIndices.length === 0) return;
+
+    let copiedShapes = selectedShapeIndices.map(index => ({...shapes[index]}));
+    localStorage.setItem('copiedShapes', JSON.stringify(copiedShapes));
+    updateStatus(`Copied ${copiedShapes.length} shape(s)`);
+  }
+
+  function duplicateShape() {
+    if (selectedShapeIndices.length === 0) return;
+
+    let newShapes = selectedShapeIndices.map(index => {
+      let original = shapes[index];
+      return {
+        ...original,
+        x: original.x + 20,
+        y: original.y + 20
+      };
+    });
+
+    shapes.push(...newShapes);
+    selectedShapeIndices = shapes.slice(-newShapes.length).map((_, i) => shapes.length - newShapes.length + i);
+    updateSelectionBox();
+    updateCodeBox();
+    saveToHistory();
+    updateStatus(`Duplicated ${newShapes.length} shape(s)`);
+  }
+
+  function deleteSelected() {
+    if (selectedShapeIndices.length === 0) return;
+
+    selectedShapeIndices.sort((a, b) => b - a);
+    selectedShapeIndices.forEach(index => shapes.splice(index, 1));
+
+    selectedShapeIndices = [];
+    selectionBox.style.display = 'none';
+    updateTransformUI();
+    updateCodeBox();
+    saveToHistory();
+    updateStatus('Deleted selected shape(s)');
+  }
+
+  function saveToHistory() {
+    shapeHistory = shapeHistory.slice(0, historyIndex + 1);
+    shapeHistory.push(JSON.parse(JSON.stringify(shapes)));
+    historyIndex++;
+
+    if (shapeHistory.length > 50) {
+      shapeHistory.shift();
+      historyIndex--;
+    }
+  }
+
+  function undo() {
+    if (historyIndex > 0) {
+      historyIndex--;
+      shapes = JSON.parse(JSON.stringify(shapeHistory[historyIndex]));
+      selectedShapeIndices = [];
+      updateTransformUI();
+      updateCodeBox();
+      updateStatus('Undone');
+    }
+  }
+
+  function redo() {
+    if (historyIndex < shapeHistory.length - 1) {
+      historyIndex++;
+      shapes = JSON.parse(JSON.stringify(shapeHistory[historyIndex]));
+      selectedShapeIndices = [];
+      updateTransformUI();
+      updateCodeBox();
+      updateStatus('Redone');
+    }
+  }
+
+
+
+  function updateTransformUI() {
+    if (selectedShapeIndices.length === 0) {
+      transformControls.style.display = 'none';
+    } else {
+      transformControls.style.display = 'block';
+
+      let s = shapes[selectedShapeIndices[0]];
+      fillColor.value = s.fill;
+      strokeColor.value = s.stroke;
+      strokeWeightVal.value = s.strokeWeight;
+      fillOpacity.value = s.fillOpacity || 255;
+      updateColorPreviews();
+    }
+  }
+
+  function updateCodeBox() {
+    let code = `function setup() {\n  createCanvas(${width}, ${height});\n}\n\nfunction draw() {\n  background(255);\n`;
+
+    for (let s of shapes) {
+      code += `  push();\n`;
+
+      code += `  translate(${(s.x + Math.abs(s.w)/2).toFixed(1)}, ${(s.y + Math.abs(s.h)/2).toFixed(1)});\n`;
+
+      if (s.rotation && s.rotation !== 0) {
+        code += `  rotate(${s.rotation.toFixed(3)});\n`;
+      }
+      if (s.flipH) code += `  scale(-1, 1);\n`;
+      if (s.flipV) code += `  scale(1, -1);\n`;
+
+      code += `  stroke("${s.stroke}");\n`;
+      code += `  strokeWeight(${s.strokeWeight});\n`;
+
+      if (s.fillOpacity !== undefined && s.fillOpacity < 255) {
+        let r = parseInt(s.fill.substr(1,2), 16);
+        let g = parseInt(s.fill.substr(3,2), 16);
+        let b = parseInt(s.fill.substr(5,2), 16);
+        code += `  fill(${r}, ${g}, ${b}, ${s.fillOpacity});\n`;
+      } else {
+        code += `  fill("${s.fill}");\n`;
+      }
+
+      switch (s.tool) {
+        case 'rect':
+          code += `  rectMode(CENTER);\n`;
+          code += `  rect(0, 0, ${Math.abs(s.w)}, ${Math.abs(s.h)});\n`;
+          break;
+        case 'ellipse':
+          code += `  ellipse(0, 0, ${Math.abs(s.w)}, ${Math.abs(s.h)});\n`;
+          break;
+        case 'triangle':
+          let hw = Math.abs(s.w) / 2;
+          let hh = Math.abs(s.h) / 2;
+          code += `  triangle(-${hw}, ${hh}, ${hw}, ${hh}, 0, -${hh});\n`;
+          break;
+      }
+      code += `  pop();\n`;
+    }
+
+    code += `}\n\n// Copy this code to your p5.js editor and run it!`;
+    document.getElementById('codeBox').textContent = code;
+  }
+
+  function clearCanvas() {
+    shapes = [];
+    selectedShapeIndices = [];
+    selectionBox.style.display = 'none';
+    updateTransformUI();
+    updateCodeBox();
+    saveToHistory();
+    updateStatus('Canvas cleared');
+  }
+
+  function copyCode() {
+    const codeBox = document.getElementById('codeBox');
+    navigator.clipboard.writeText(codeBox.textContent)
+      .then(() => updateStatus('Code copied to clipboard!'))
+      .catch(() => updateStatus('Failed to copy code'));
+  }
+
+  function exportImage() {
+    save('p5js-artwork.png');
+    updateStatus('Image exported');
+  }
+
+  function draw() {
+    background(34, 34, 51);
+
+    if (snapToGrid) {
+      drawGrid();
+    }
+
+    for (let i = 0; i < shapes.length; i++) {
+      drawShape(shapes[i], selectedShapeIndices.includes(i));
+    }
+
+    if (previewShape && isDrawing) {
+      push();
+
+      translate(previewShape.x + Math.abs(previewShape.w) / 2, previewShape.y + Math.abs(previewShape.h) / 2);
+
+      stroke(255, 255, 255, 180);
+      strokeWeight(previewShape.strokeWeight + 1);
+
+      let previewFill = color(previewShape.fill);
+      previewFill.setAlpha(80);
+      fill(previewFill);
+
+      drawShapeGeometry(previewShape);
+
+      noFill();
+      stroke(0, 255, 255, 200);
+      strokeWeight(1);
+      drawDot(0, 0, 4);
+
+      pop();
+    }
+  }
+
+  function drawShape(s, isSelected) {
+    push();
+    translate(s.x + Math.abs(s.w) / 2, s.y + Math.abs(s.h) / 2);
+
+    if (s.rotation && s.rotation !== 0) rotate(s.rotation);
+    if (s.flipH) scale(-1, 1);
+    if (s.flipV) scale(1, -1);
+
+    let fillAlpha = s.fillOpacity !== undefined ? s.fillOpacity : 255;
+    let fillCol = color(s.fill);
+    fillCol.setAlpha(fillAlpha);
+
+    stroke(s.stroke);
+    strokeWeight(s.strokeWeight);
+    fill(fillCol);
+
+    drawShapeGeometry(s);
+
+    if (isSelected) {
+      noFill();
+      stroke(0, 255, 255);
+      strokeWeight(2);
+      rectMode(CENTER);
+      rect(0, 0, Math.abs(s.w) + 10, Math.abs(s.h) + 10);
+    }
+
+    pop();
+  }
+
+  function drawShapeGeometry(s) {
+    switch (s.tool) {
+      case 'rect':
+        rectMode(CENTER);
+        rect(0, 0, Math.abs(s.w), Math.abs(s.h)); // No rounded corners
+        break;
+      case 'ellipse':
+        ellipse(0, 0, Math.abs(s.w), Math.abs(s.h));
+        break;
+      case 'triangle':
+        triangle(-Math.abs(s.w)/2, Math.abs(s.h)/2, Math.abs(s.w)/2, Math.abs(s.h)/2, 0, -Math.abs(s.h)/2);
+        break;
+    }
+  }
+
+  function drawGrid() {
+    stroke(100, 100, 120, 50);
+    strokeWeight(1);
+
+    for (let x = 0; x < width; x += gridSize) {
+      line(x, 0, x, height);
+    }
+    for (let y = 0; y < height; y += gridSize) {
+      line(0, y, width, y);
+    }
+  }
+
+  function drawDot(x, y, size) {
+    ellipse(x, y, size, size);
+  }
+
+  function windowResized() {
+    resizeCanvas(window.innerWidth - 380, window.innerHeight);
+    updateCodeBox();
+    updateSelectionBox();
+  }
+
+  function keyPressed() {
+    if (keyCode === 8 || keyCode === 46) { // Backspace or Delete
+      deleteSelected();
+    } else if (key === 'x' && (keyIsPressed && key === 'Control')) { // Ctrl+X
+      deleteSelected();
+    } else if (key === 'c' && (keyIsPressed && key === 'Control')) {
+      copyShape();
+    } else if (key === 'd' && (keyIsPressed && key === 'Control')) {
+      duplicateShape();
+    } else if (key === 'z' && (keyIsPressed && key === 'Control')) {
+      undo();
+    } else if (key === 'y' && (keyIsPressed && key === 'Control')) {
+      redo();
+    }
+  }
+</script>
+</body>
+</html>
